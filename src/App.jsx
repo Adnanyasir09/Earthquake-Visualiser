@@ -18,6 +18,9 @@ export default function App() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedQuake, setSelectedQuake] = useState(null);
 
+  // Sidebar toggle for mobile
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   // 🔄 Fetch earthquake data
   useEffect(() => {
     let cancelled = false;
@@ -31,9 +34,7 @@ export default function App() {
         if (!res.ok) throw new Error("Network response was not ok");
 
         const json = await res.json();
-        if (!cancelled) {
-          setQuakes(json.features || []);
-        }
+        if (!cancelled) setQuakes(json.features || []);
       } catch (err) {
         if (!cancelled) setError(err.message || "Failed to fetch data");
       } finally {
@@ -42,9 +43,7 @@ export default function App() {
     }
 
     fetchQuakes();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [refreshKey]);
 
   // 🔄 Refresh handler
@@ -63,7 +62,15 @@ export default function App() {
   }, [quakes, minMagnitude]);
 
   return (
-    <div className="h-screen flex bg-gray-50">
+    <div className="h-screen flex bg-gray-50 overflow-hidden">
+      {/* 🌟 Mobile overlay toggle */}
+      <button
+        className="absolute top-4 left-4 z-50 sm:hidden p-2 bg-blue-600 text-white rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+        onClick={() => setSidebarOpen(true)}
+      >
+        ☰
+      </button>
+
       {/* 📌 Sidebar */}
       <Sidebar
         quakes={filtered}
@@ -74,11 +81,13 @@ export default function App() {
         refreshData={refreshData}
         selectedQuake={selectedQuake}
         setSelectedQuake={setSelectedQuake}
+        mobileOpen={sidebarOpen}
+        setMobileOpen={setSidebarOpen}
       />
 
       {/* 🌍 Map + Legend */}
       <main className="flex-1 relative">
-        {/* Legend stays ABOVE the map always */}
+        {/* Legend stays above map always */}
         <Legend />
 
         <MapContainer
@@ -86,7 +95,6 @@ export default function App() {
           zoom={2}
           scrollWheelZoom
           style={{ height: "100%", width: "100%" }}
-          className="z-0"
         >
           <TileLayer
             attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
@@ -104,14 +112,14 @@ export default function App() {
           {selectedQuake && <MapFocus target={selectedQuake} />}
         </MapContainer>
 
-        {/* ⚠️ Error state overlay */}
+        {/* ⚠️ Error overlay */}
         {error && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg shadow-md">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg shadow-md z-50">
             Failed to load data: {error}
           </div>
         )}
 
-        {/* ⏳ Loading state overlay */}
+        {/* ⏳ Loading overlay */}
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm z-50">
             <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent"></div>
